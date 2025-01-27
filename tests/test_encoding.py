@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import codecs
 import unittest
+from typing import Any
 
 from w3lib.encoding import (
     html_body_declared_encoding,
-    http_content_type_encoding,
     html_to_unicode,
+    http_content_type_encoding,
     read_bom,
     resolve_encoding,
     to_unicode,
@@ -121,11 +124,11 @@ class UnicodeDecodingTestCase(unittest.TestCase):
         self.assertEqual(to_unicode(b"\xc2\xc2\xa3", "utf-8"), "\ufffd\xa3")
 
 
-def ct(charset):
+def ct(charset: str | None) -> str | None:
     return "Content-Type: text/html; charset=" + charset if charset else None
 
 
-def norm_encoding(enc):
+def norm_encoding(enc: str) -> str:
     return codecs.lookup(enc).name
 
 
@@ -138,7 +141,13 @@ class HtmlConversionTests(unittest.TestCase):
         self.assertTrue(isinstance(body_unicode, str))
         self.assertEqual(body_unicode, unicode_string)
 
-    def _assert_encoding(self, content_type, body, expected_encoding, expected_unicode):
+    def _assert_encoding(
+        self,
+        content_type: str | None,
+        body: bytes,
+        expected_encoding: str,
+        expected_unicode: str | list[str],
+    ) -> None:
         assert not isinstance(body, str)
         encoding, body_unicode = html_to_unicode(ct(content_type), body)
         self.assertTrue(isinstance(body_unicode, str))
@@ -210,8 +219,12 @@ class HtmlConversionTests(unittest.TestCase):
         assert "<span>value</span>" in body_unicode, repr(body_unicode)
 
     def _assert_encoding_detected(
-        self, content_type, expected_encoding, body, **kwargs
-    ):
+        self,
+        content_type: str | None,
+        expected_encoding: str,
+        body: bytes,
+        **kwargs: Any,
+    ) -> None:
         assert not isinstance(body, str)
         encoding, body_unicode = html_to_unicode(ct(content_type), body, **kwargs)
         self.assertTrue(isinstance(body_unicode, str))

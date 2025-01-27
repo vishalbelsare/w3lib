@@ -65,6 +65,10 @@ class RemoveEntitiesTest(unittest.TestCase):
         self.assertEqual(replace_entities("x&#x2264;y"), "x\u2264y")
         self.assertEqual(replace_entities("x&#157;y"), "xy")
         self.assertEqual(replace_entities("x&#157;y", remove_illegal=False), "x&#157;y")
+        self.assertEqual(replace_entities("&#82179209091;"), "")
+        self.assertEqual(
+            replace_entities("&#82179209091;", remove_illegal=False), "&#82179209091;"
+        )
 
     def test_browser_hack(self):
         # check browser hack for numeric character references in the 80-9F range
@@ -156,12 +160,12 @@ class RemoveTagsTest(unittest.TestCase):
         assert isinstance(remove_tags(b"no tags"), str)
         assert isinstance(remove_tags(b"no tags", which_ones=("p",)), str)
         assert isinstance(remove_tags(b"<p>one tag</p>"), str)
-        assert isinstance(remove_tags(b"<p>one tag</p>", which_ones=("p")), str)
+        assert isinstance(remove_tags(b"<p>one tag</p>", which_ones=("p",)), str)
         assert isinstance(remove_tags(b"<a>link</a>", which_ones=("b",)), str)
         assert isinstance(remove_tags("no tags"), str)
         assert isinstance(remove_tags("no tags", which_ones=("p",)), str)
         assert isinstance(remove_tags("<p>one tag</p>"), str)
-        assert isinstance(remove_tags("<p>one tag</p>", which_ones=("p")), str)
+        assert isinstance(remove_tags("<p>one tag</p>", which_ones=("p",)), str)
         assert isinstance(remove_tags("<a>link</a>", which_ones=("b",)), str)
 
     def test_remove_tags_without_tags(self):
@@ -370,6 +374,30 @@ class GetBaseUrlTest(unittest.TestCase):
         self.assertEqual(get_base_url(text, baseurl), "http://example.org/something")
         self.assertEqual(
             get_base_url(text, baseurl.encode("ascii")), "http://example.org/something"
+        )
+
+    def test_base_url_in_comment(self):
+        self.assertEqual(
+            get_base_url("""<!-- <base href="http://example.com/"/> -->"""), ""
+        )
+        self.assertEqual(
+            get_base_url("""<!-- <base href="http://example.com/"/>"""), ""
+        )
+        self.assertEqual(
+            get_base_url("""<!-- <base href="http://example.com/"/> --"""), ""
+        )
+        self.assertEqual(
+            get_base_url(
+                """<!-- <!--  <base href="http://example.com/"/> -- -->  <base href="http://example_2.com/"/> """
+            ),
+            "http://example_2.com/",
+        )
+
+        self.assertEqual(
+            get_base_url(
+                """<!-- <base href="http://example.com/"/> --> <!-- <base href="http://example_2.com/"/> --> <base href="http://example_3.com/"/>"""
+            ),
+            "http://example_3.com/",
         )
 
     def test_relative_url_with_absolute_path(self):
